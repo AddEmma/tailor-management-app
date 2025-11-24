@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "182037359017",
+    "project_id": "tailor-management-18fb9",
+    "storage_bucket": "tailor-management-18fb9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182037359017:android:eeebf2e7a021ed6e657cb8",
+        "android_client_info": {
+          "package_name": "com.example.tailor_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBn0NQ19JBJ_glSkfyifYu2p5oGs0MsqdQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

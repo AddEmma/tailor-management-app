@@ -1,0 +1,103 @@
+Launching lib\main.dart on 2409BRN2CY in debug mode...
+Running Gradle task 'assembleDebug'...                             25.2s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           5.4s
+D/FlutterJNI( 5853): Beginning load of flutter...
+D/FlutterJNI( 5853): flutter (null) was loaded normally!
+I/flutter ( 5853): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+I/flutter ( 5853): Firebase initialized successfully
+Syncing files to device 2409BRN2CY...                              483ms
+
+Flutter run key commands.
+r Hot reload.
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on 2409BRN2CY is available at: http://127.0.0.1:49288/6iK6QJaWg_8=/
+I/GrallocExtra( 5853): gralloc_extra_query:is_SW3D 0
+I/GrallocExtra( 5853): gralloc_extra_query:is_SW3D 0
+W/libc    ( 5853): Access denied finding property "ro.vendor.display.iris_x7.support"
+D/BLASTBufferQueue( 5853): [SurfaceView[com.example.tailor_management/com.example.tailor_management.MainActivity]#1](f:0,a:1) acquireNextBufferLocked size=720x1640 mFrameNumber=1 applyTransaction=true mTimestamp=100879661170395(auto) mPendingTransactions.size=0 graphicBufferId=25138443583498 transform=0    
+D/ilor_management( 5853): Can't load libmbrainSDK
+I/Choreographer( 5853): Skipped 90 frames!  The application may be doing too much work on its main thread.
+D/UserSceneDetector( 5853): invoke error.
+W/Looper  ( 5853): PerfMonitor doFrame : time=1ms vsyncFrame=5942872 latency=1512ms procState=-1
+I/flutter ( 5853): AuthProvider: Constructor called
+I/flutter ( 5853): AuthProvider: Starting initialization
+I/flutter ( 5853): AuthProvider: Firebase initialized
+I/flutter ( 5853): AuthProvider: Auth state listener set up
+I/flutter ( 5853): AuthProvider: Auth state changed - User: emmabaddae@gmail.com
+I/flutter ( 5853): AuthProvider: Initialization complete
+D/VRI[MainActivity]( 5853): vri.reportNextDraw android.view.ViewRootImpl.performTraversals:4974 android.view.ViewRootImpl.doTraversal:3561 android.view.ViewRootImpl$TraversalRunnable.run:11781 android.view.Choreographer$CallbackRecord.run:1828 android.view.Choreographer$CallbackRecord.run:1837
+D/VRI[MainActivity]( 5853): Setup new sync=wmsSync-VRI[MainActivity]#1
+D/UserSceneDetector( 5853): invoke error.
+D/HWUI    ( 5853): makeCurrent grContext:0xb400007e741ad090 reset mTextureAvailable
+D/ilor_management( 5853): MiuiProcessManagerServiceStub setSchedFifo
+I/MiuiProcessManagerImpl( 5853): setSchedFifo pid:5853, mode:3
+W/libc    ( 5853): Access denied finding property "ro.vendor.display.iris_x7.support"
+D/BLASTBufferQueue( 5853): [VRI[MainActivity]#0](f:0,a:1) acquireNextBufferLocked size=720x1640 mFrameNumber=1 applyTransaction=true mTimestamp=100879836204472(auto) mPendingTransactions.size=0 graphicBufferId=25138443583506 transform=0
+D/VRI[MainActivity]( 5853): vri.reportDrawFinished
+The Flutter DevTools debugger and profiler on 2409BRN2CY is available at: http://127.0.0.1:9101?uri=http://127.0.0.1:49288/6iK6QJaWg_8=/
+I/HandWritingStubImpl( 5853): refreshLastKeyboardType: 1
+I/HandWritingStubImpl( 5853): getCurrentKeyboardType: 1
+D/VRI[MainActivity]( 5853): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/HandWritingStubImpl( 5853): getCurrentKeyboardType: 1
+D/ProfileInstaller( 5853): Installing profile for com.example.tailor_management
+D/ActivityThread( 5853): invoke error.
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100886668, downTime=100886668, phoneEventTime=23:31:00.250 } moveCount:0
+W/MirrorManager( 5853): this model don't Support
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100886800, downTime=100886668, phoneEventTime=23:31:00.383 } moveCount:2
+E/ilor_management( 5853): DynamicFPS DF open fail: No such file or directory
+E/ilor_management( 5853): FrameInsert open fail: No such file or directory
+D/UserSceneDetector( 5853): invoke error.
+W/Looper  ( 5853): PerfMonitor doFrame : time=1ms vsyncFrame=5943396 latency=489ms procState=-1 historyMsgCount=1
+D/VRI[MainActivity]( 5853): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100893190, downTime=100893190, phoneEventTime=23:31:06.772 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100893306, downTime=100893190, phoneEventTime=23:31:06.888 } moveCount:2
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100895303, downTime=100895303, phoneEventTime=23:31:08.885 } moveCount:0
+E/LB      ( 5853): fail to open file: No such file or directory
+E/LB      ( 5853): fail to open node: No such file or directory
+E/LB      ( 5853): fail to open node: No such file or directory
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100895618, downTime=100895303, phoneEventTime=23:31:09.201 } moveCount:27
+I/ScrollIdentify( 5853): on fling
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100896916, downTime=100896916, phoneEventTime=23:31:10.498 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100896999, downTime=100896916, phoneEventTime=23:31:10.581 } moveCount:3
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100898297, downTime=100898297, phoneEventTime=23:31:11.879 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100898380, downTime=100898297, phoneEventTime=23:31:11.962 } moveCount:6
+I/ScrollIdentify( 5853): on fling
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100899578, downTime=100899578, phoneEventTime=23:31:13.161 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100899744, downTime=100899578, phoneEventTime=23:31:13.327 } moveCount:14
+I/ScrollIdentify( 5853): on fling
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100900360, downTime=100900360, phoneEventTime=23:31:13.942 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100900510, downTime=100900360, phoneEventTime=23:31:14.092 } moveCount:14
+I/ScrollIdentify( 5853): on fling
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100900809, downTime=100900809, phoneEventTime=23:31:14.391 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100900892, downTime=100900809, phoneEventTime=23:31:14.474 } moveCount:2
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100901974, downTime=100901974, phoneEventTime=23:31:15.556 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100902173, downTime=100901974, phoneEventTime=23:31:15.755 } moveCount:14
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100902856, downTime=100902856, phoneEventTime=23:31:16.438 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100903072, downTime=100902856, phoneEventTime=23:31:16.654 } moveCount:20
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100903704, downTime=100903704, phoneEventTime=23:31:17.286 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100903787, downTime=100903704, phoneEventTime=23:31:17.369 } moveCount:5
+I/ScrollIdentify( 5853): on fling
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100904536, downTime=100904536, phoneEventTime=23:31:18.118 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100904652, downTime=100904536, phoneEventTime=23:31:18.235 } moveCount:3
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=100910426, downTime=100910426, phoneEventTime=23:31:24.008 } moveCount:0
+I/MIUIInput( 5853): [MotionEvent] ViewRootImpl windowName 'com.example.tailor_management/com.example.tailor_management.MainActivity', { action=ACTION_UP, 
+id[0]=0, pointerCount=1, eventTime=100910442, downTime=100910426, phoneEventTime=23:31:24.025 } moveCount:0
+D/VRI[MainActivity]( 5853): getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
