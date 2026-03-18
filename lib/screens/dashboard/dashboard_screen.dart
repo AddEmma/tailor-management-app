@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/firebase_service.dart';
+import '../../models/models.dart';
+import '../../utils/responsive_utils.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,39 +16,46 @@ class DashboardScreen extends StatefulWidget {
 
 class DashboardScreenState extends State<DashboardScreen>
     with AutomaticKeepAliveClientMixin {
-  // Cache dashboard data to prevent recalculation
-  static Map<String, dynamic>? _cachedDashboardData;
-  static List<Map<String, dynamic>>? _cachedUpcomingOrders;
-  static DateTime? _lastCacheUpdate;
-
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _hasError = false;
+  String? _errorMessage;
+
+  // Real data from streams
+  List<Customer> _customers = [];
+  List<TailorOrder> _orders = [];
+  StreamSubscription<List<Customer>>? _customerSubscription;
+  StreamSubscription<List<TailorOrder>>? _orderSubscription;
 
   @override
-  bool get wantKeepAlive => true; // Keep state alive when switching tabs
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    // Load data asynchronously without blocking
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadDashboardDataAsync();
+      _loadDashboardData();
     });
   }
 
-  // Check if cache is still valid (5 minutes)
-  bool get _isCacheValid {
-    if (_lastCacheUpdate == null) return false;
-    return DateTime.now().difference(_lastCacheUpdate!).inMinutes < 5;
+  @override
+  void dispose() {
+    _customerSubscription?.cancel();
+    _orderSubscription?.cancel();
+    super.dispose();
   }
 
-  Future<void> _loadDashboardDataAsync() async {
-    // If cache is valid, use it
-    if (_isCacheValid && _cachedDashboardData != null) {
+  Future<void> _loadDashboardData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+
+    if (user == null) {
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+        _errorMessage = 'Please log in to view dashboard';
+      });
       return;
     }
-
-    if (_isLoading) return; // Prevent multiple simultaneous loads
 
     setState(() {
       _isLoading = true;
@@ -52,68 +63,105 @@ class DashboardScreenState extends State<DashboardScreen>
     });
 
     try {
-      // Use compute for heavy data processing to avoid blocking main thread
-      final data = await _computeDashboardData();
+      // Subscribe to real-time customer updates
+      _customerSubscription?.cancel();
+      _customerSubscription = FirebaseService.getCustomers(user.uid).listen(
+        (customers) {
+          if (mounted) {
+            setState(() {
+              _customers = customers;
+              _isLoading = false;
+            });
+          }
+        },
+        onError: (error) {
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+              _errorMessage = 'Failed to load customers';
+              _isLoading = false;
+            });
+          }
+        },
+      );
 
-      if (mounted) {
-        setState(() {
-          _cachedDashboardData = data['dashboard'];
-          _cachedUpcomingOrders = data['orders'];
-          _lastCacheUpdate = DateTime.now();
-          _isLoading = false;
-        });
-      }
+      // Subscribe to real-time order updates
+      _orderSubscription?.cancel();
+      _orderSubscription = FirebaseService.getOrders(user.uid).listen(
+        (orders) {
+          if (mounted) {
+            setState(() {
+              _orders = orders;
+              _isLoading = false;
+            });
+          }
+        },
+        onError: (error) {
+          if (mounted) {
+            setState(() {
+              _hasError = true;
+              _errorMessage = 'Failed to load orders';
+              _isLoading = false;
+            });
+          }
+        },
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
           _hasError = true;
+          _errorMessage = e.toString();
         });
       }
     }
   }
 
-  // Simulate data computation - in real app, this would be your Firebase calls
-  Future<Map<String, dynamic>> _computeDashboardData() async {
-    // Simulate network delay without blocking main thread
-    await Future.delayed(const Duration(milliseconds: 300));
+  // Calculate dashboard statistics from real data
+  int get _totalCustomers => _customers.length;
 
-    return {
-      'dashboard': {
-        'totalCustomers': 25,
-        'activeOrders': 8,
-        'monthlyRevenue': 1250.50,
-      },
-      'orders': [
-        {
-          'customerName': 'John Smith',
-          'style': 'Business Suit',
-          'fabric': 'Wool Blend',
-          'deliveryDate': DateTime.now().add(const Duration(days: 2)),
-          'price': 450.0,
-        },
-        {
-          'customerName': 'Sarah Johnson',
-          'style': 'Evening Dress',
-          'fabric': 'Silk',
-          'deliveryDate': DateTime.now().add(const Duration(days: 5)),
-          'price': 320.0,
-        },
-        {
-          'customerName': 'Mike Wilson',
-          'style': 'Casual Shirt',
-          'fabric': 'Cotton',
-          'deliveryDate': DateTime.now().subtract(const Duration(days: 1)),
-          'price': 85.0,
-        },
-      ],
-    };
+  int get _activeOrders => _orders
+      .where(
+        (order) =>
+            order.status == OrderStatus.pending ||
+            order.status == OrderStatus.inProgress,
+      )
+      .length;
+
+  double get _monthlyRevenue {
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    return _orders
+        .where(
+          (order) =>
+              order.createdAt.isAfter(startOfMonth) &&
+              (order.status == OrderStatus.completed ||
+                  order.status == OrderStatus.delivered),
+        )
+        .fold(0.0, (sum, order) => sum + order.paidAmount);
+  }
+
+  List<TailorOrder> get _upcomingOrders {
+    final now = DateTime.now();
+    final nextWeek = now.add(const Duration(days: 7));
+    return _orders
+        .where(
+          (order) =>
+              order.deliveryDate.isAfter(
+                now.subtract(const Duration(days: 1)),
+              ) &&
+              order.deliveryDate.isBefore(nextWeek) &&
+              (order.status == OrderStatus.pending ||
+                  order.status == OrderStatus.inProgress ||
+                  order.status == OrderStatus.completed),
+        )
+        .toList()
+      ..sort((a, b) => a.deliveryDate.compareTo(b.deliveryDate));
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-
+    super.build(context);
     return Scaffold(appBar: _buildAppBar(), body: _buildBody());
   }
 
@@ -127,13 +175,8 @@ class DashboardScreenState extends State<DashboardScreen>
         if (!_isLoading)
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Clear cache and reload
-              _cachedDashboardData = null;
-              _cachedUpcomingOrders = null;
-              _lastCacheUpdate = null;
-              _loadDashboardDataAsync();
-            },
+            onPressed: _loadDashboardData,
+            tooltip: 'Refresh',
           ),
       ],
     );
@@ -144,29 +187,26 @@ class DashboardScreenState extends State<DashboardScreen>
       return _buildErrorState();
     }
 
-    if (_isLoading && _cachedDashboardData == null) {
+    if (_isLoading && _customers.isEmpty && _orders.isEmpty) {
       return _buildLoadingState();
     }
 
     return RefreshIndicator(
-      onRefresh: () async {
-        _cachedDashboardData = null;
-        _cachedUpcomingOrders = null;
-        _lastCacheUpdate = null;
-        await _loadDashboardDataAsync();
-      },
+      onRefresh: _loadDashboardData,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildWelcomeCard(),
-            const SizedBox(height: 20),
-            if (_cachedDashboardData != null) _buildStatsSection(),
-            const SizedBox(height: 24),
-            _buildUpcomingDeliveriesSection(),
-          ],
+        padding: context.responsivePadding,
+        child: ResponsiveCenter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildWelcomeCard(),
+              const SizedBox(height: 20),
+              _buildStatsSection(),
+              const SizedBox(height: 24),
+              _buildUpcomingDeliveriesSection(),
+            ],
+          ),
         ),
       ),
     );
@@ -187,26 +227,30 @@ class DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildErrorState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          const Text(
-            'Failed to load dashboard',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Please check your connection and try again',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _loadDashboardDataAsync,
-            child: const Text('Retry'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Failed to load dashboard',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage ?? 'Please check your connection and try again',
+              style: const TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loadDashboardData,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -227,11 +271,13 @@ class DashboardScreenState extends State<DashboardScreen>
               children: [
                 CircleAvatar(
                   backgroundColor: Colors.indigo,
+                  radius: 24,
                   child: Text(
                     userName.isNotEmpty ? userName[0].toUpperCase() : '?',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 20,
                     ),
                   ),
                 ),
@@ -264,35 +310,60 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildStatsSection() {
-    final data = _cachedDashboardData!;
+    final isWide = !Breakpoints.isMobile(context);
 
+    // Build stat cards
+    final statCards = [
+      _StatCard(
+        title: 'Total Customers',
+        value: _totalCustomers.toString(),
+        icon: Icons.people,
+        color: Colors.blue,
+      ),
+      _StatCard(
+        title: 'Active Orders',
+        value: _activeOrders.toString(),
+        icon: Icons.assignment,
+        color: Colors.orange,
+      ),
+      _StatCard(
+        title: 'Monthly Revenue',
+        value: '\$${_monthlyRevenue.toStringAsFixed(2)}',
+        icon: Icons.attach_money,
+        color: Colors.green,
+      ),
+    ];
+
+    // Use responsive grid for tablet/desktop
+    if (isWide) {
+      return Row(
+        children: statCards
+            .map(
+              (card) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: card,
+                ),
+              ),
+            )
+            .toList(),
+      );
+    }
+
+    // Stack layout for mobile
     return Column(
       children: [
         Row(
           children: [
-            Expanded(
-              child: _StatCard(
-                title: 'Total Customers',
-                value: data['totalCustomers'].toString(),
-                icon: Icons.people,
-                color: Colors.blue,
-              ),
-            ),
+            Expanded(child: statCards[0]),
             const SizedBox(width: 16),
-            Expanded(
-              child: _StatCard(
-                title: 'Active Orders',
-                value: data['activeOrders'].toString(),
-                icon: Icons.assignment,
-                color: Colors.orange,
-              ),
-            ),
+            Expanded(child: statCards[1]),
           ],
         ),
         const SizedBox(height: 16),
         _StatCard(
           title: 'Monthly Revenue',
-          value: '\$${data['monthlyRevenue'].toStringAsFixed(2)}',
+          value: '\$${_monthlyRevenue.toStringAsFixed(2)}',
           icon: Icons.attach_money,
           color: Colors.green,
           isFullWidth: true,
@@ -302,22 +373,32 @@ class DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildUpcomingDeliveriesSection() {
+    final upcomingOrders = _upcomingOrders;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Upcoming Deliveries',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Upcoming Deliveries',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            if (upcomingOrders.isNotEmpty)
+              Text(
+                '${upcomingOrders.length} orders',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+          ],
         ),
         const SizedBox(height: 12),
-        if (_cachedUpcomingOrders?.isEmpty ?? true)
+        if (upcomingOrders.isEmpty)
           _buildEmptyDeliveries()
         else
-          ..._cachedUpcomingOrders!.map(
-            (order) => _UpcomingOrderCard(order: order),
-          ),
+          ...upcomingOrders.map((order) => _UpcomingOrderCard(order: order)),
       ],
     );
   }
@@ -325,20 +406,26 @@ class DashboardScreenState extends State<DashboardScreen>
   Widget _buildEmptyDeliveries() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Icon(Icons.check_circle_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No upcoming deliveries',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            Text(
-              'You\'re all caught up!',
-              style: TextStyle(color: Colors.grey[500]),
-            ),
-          ],
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                size: 64,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No upcoming deliveries',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              Text(
+                'You\'re all caught up!',
+                style: TextStyle(color: Colors.grey[500]),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -416,17 +503,18 @@ class _StatCard extends StatelessWidget {
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: color, size: 32),
+          child: Icon(icon, color: color, size: 28),
         ),
         const SizedBox(height: 12),
         Text(
           value,
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: color,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           title,
           style: TextStyle(color: Colors.grey[600], fontSize: 12),
@@ -439,14 +527,15 @@ class _StatCard extends StatelessWidget {
 
 // Optimized upcoming order card
 class _UpcomingOrderCard extends StatelessWidget {
-  final Map<String, dynamic> order;
+  final TailorOrder order;
 
   const _UpcomingOrderCard({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final deliveryDate = order['deliveryDate'] as DateTime;
-    final daysUntilDelivery = deliveryDate.difference(DateTime.now()).inDays;
+    final daysUntilDelivery = order.deliveryDate
+        .difference(DateTime.now())
+        .inDays;
     final isOverdue = daysUntilDelivery < 0;
     final isUrgent = daysUntilDelivery <= 2 && daysUntilDelivery >= 0;
 
@@ -470,16 +559,16 @@ class _UpcomingOrderCard extends StatelessWidget {
             child: Icon(Icons.schedule, color: statusColor),
           ),
           title: Text(
-            order['customerName'] as String,
+            order.customerName,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${order['style']} - ${order['fabric']}'),
+              Text('${order.style} - ${order.fabric}'),
               const SizedBox(height: 4),
               Text(
-                'Due: ${DateFormat('MMM dd, yyyy').format(deliveryDate)}',
+                'Due: ${DateFormat('MMM dd, yyyy').format(order.deliveryDate)}',
                 style: TextStyle(
                   color: statusColor,
                   fontWeight: isOverdue || isUrgent ? FontWeight.bold : null,
@@ -489,21 +578,30 @@ class _UpcomingOrderCard extends StatelessWidget {
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                isOverdue
-                    ? 'OVERDUE'
-                    : isUrgent
-                    ? 'URGENT'
-                    : '${daysUntilDelivery}d',
-                style: TextStyle(
-                  color: statusColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isOverdue
+                      ? 'OVERDUE'
+                      : isUrgent
+                      ? 'URGENT'
+                      : '${daysUntilDelivery}d',
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
                 ),
               ),
+              const SizedBox(height: 4),
               Text(
-                '\$${(order['price'] as double).toStringAsFixed(0)}',
+                '\$${order.price.toStringAsFixed(0)}',
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
@@ -512,7 +610,7 @@ class _UpcomingOrderCard extends StatelessWidget {
           onTap: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Order details for ${order['customerName']}'),
+                content: Text('Order details for ${order.customerName}'),
                 duration: const Duration(seconds: 2),
               ),
             );

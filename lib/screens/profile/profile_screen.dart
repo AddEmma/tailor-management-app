@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/responsive_utils.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,6 +13,32 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
+
+  // Notification settings
+  bool _orderUpdatesEnabled = true;
+  bool _paymentAlertsEnabled = true;
+  bool _deliveryRemindersEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationSettings();
+  }
+
+  Future<void> _loadNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _orderUpdatesEnabled = prefs.getBool('notify_order_updates') ?? true;
+      _paymentAlertsEnabled = prefs.getBool('notify_payment_alerts') ?? true;
+      _deliveryRemindersEnabled =
+          prefs.getBool('notify_delivery_reminders') ?? true;
+    });
+  }
+
+  Future<void> _saveNotificationSetting(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,91 +67,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Profile Header
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: Colors.indigo,
-                          child: Text(
-                            _getInitials(user.displayName),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          user.displayName ?? 'No Name',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          user.email ?? 'No Email',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (user.phoneNumber?.isNotEmpty == true) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            user.phoneNumber!,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+            padding: context.responsivePadding,
+            child: ResponsiveCenter(
+              maxWidth: 600,
+              child: Column(
+                children: [
+                  // Profile Header
+                  _buildProfileHeader(user),
+                  const SizedBox(height: 20),
 
-                // Settings Options
-                _buildSettingsSection(context, authProvider),
-                const SizedBox(height: 20),
+                  // Settings Options
+                  _buildSettingsSection(context, authProvider),
+                  const SizedBox(height: 20),
 
-                // App Information
-                _buildAppInfoSection(context),
-                const SizedBox(height: 20),
+                  // App Information
+                  _buildAppInfoSection(context),
+                  const SizedBox(height: 20),
 
-                // Sign Out Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: (_isLoading || authProvider.isLoading)
-                        ? null
-                        : () => _showSignOutDialog(context, authProvider),
-                    icon: (_isLoading || authProvider.isLoading)
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.logout),
-                    label: const Text('Sign Out'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
+                  // Sign Out Button
+                  _buildSignOutButton(authProvider),
+                ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.indigo,
+              child: Text(
+                _getInitials(user.displayName),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              user.displayName ?? 'No Name',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              user.email ?? 'No Email',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            ),
+            if (user.phoneNumber?.isNotEmpty == true) ...[
+              const SizedBox(height: 4),
+              Text(
+                user.phoneNumber!,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -148,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             title: 'Edit Profile',
             subtitle: 'Update your personal information',
             onTap: () {
-              _showEditProfileDialog(context, authProvider.user!);
+              _showEditProfileDialog(context, authProvider);
             },
           ),
           const Divider(height: 1),
@@ -243,6 +253,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildSignOutButton(AuthProvider authProvider) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: (_isLoading || authProvider.isLoading)
+            ? null
+            : () => _showSignOutDialog(context, authProvider),
+        icon: (_isLoading || authProvider.isLoading)
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.logout),
+        label: const Text('Sign Out'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSettingsTile(
     BuildContext context, {
     required IconData icon,
@@ -267,61 +301,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showEditProfileDialog(BuildContext context, user) {
-    final nameController = TextEditingController(text: user.displayName ?? '');
-    final businessController = TextEditingController(text: '');
-    final phoneController = TextEditingController(text: user.phoneNumber ?? '');
+  void _showEditProfileDialog(BuildContext context, AuthProvider authProvider) {
+    final user = authProvider.user;
+    final nameController = TextEditingController(text: user?.displayName ?? '');
+    bool isUpdating = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Profile'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Display Name',
+                    prefixIcon: Icon(Icons.person),
+                    helperText: 'This name will be shown across the app',
+                  ),
+                  enabled: !isUpdating,
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: businessController,
-                decoration: const InputDecoration(
-                  labelText: 'Business Name (Optional)',
-                  prefixIcon: Icon(Icons.business),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number (Optional)',
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-            ],
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: isUpdating ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isUpdating
+                  ? null
+                  : () async {
+                      final newName = nameController.text.trim();
+                      if (newName.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter a name'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isUpdating = true);
+
+                      try {
+                        await authProvider.user?.updateDisplayName(newName);
+                        // Reload user to get updated info
+                        await authProvider.user?.reload();
+
+                        if (dialogContext.mounted) {
+                          Navigator.pop(dialogContext);
+                        }
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Profile updated successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          // Trigger rebuild to show new name
+                          setState(() {});
+                        }
+                      } catch (e) {
+                        setDialogState(() => isUpdating = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to update profile: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+              child: isUpdating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile update coming soon!')),
-              );
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
@@ -329,43 +400,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showNotificationSettings(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Notification Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              title: const Text('Order Updates'),
-              subtitle: const Text('Get notified about order status changes'),
-              value: true,
-              onChanged: (value) {
-                // TODO: Implement notification settings
-              },
-            ),
-            SwitchListTile(
-              title: const Text('Payment Alerts'),
-              subtitle: const Text('Get notified about new payments'),
-              value: true,
-              onChanged: (value) {
-                // TODO: Implement notification settings
-              },
-            ),
-            SwitchListTile(
-              title: const Text('Delivery Reminders'),
-              subtitle: const Text('Get reminded about upcoming deliveries'),
-              value: true,
-              onChanged: (value) {
-                // TODO: Implement notification settings
-              },
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Notification Settings'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SwitchListTile(
+                title: const Text('Order Updates'),
+                subtitle: const Text('Get notified about order status changes'),
+                value: _orderUpdatesEnabled,
+                onChanged: (value) {
+                  setDialogState(() => _orderUpdatesEnabled = value);
+                  setState(() => _orderUpdatesEnabled = value);
+                  _saveNotificationSetting('notify_order_updates', value);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Payment Alerts'),
+                subtitle: const Text('Get notified about new payments'),
+                value: _paymentAlertsEnabled,
+                onChanged: (value) {
+                  setDialogState(() => _paymentAlertsEnabled = value);
+                  setState(() => _paymentAlertsEnabled = value);
+                  _saveNotificationSetting('notify_payment_alerts', value);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Delivery Reminders'),
+                subtitle: const Text('Get reminded about upcoming deliveries'),
+                value: _deliveryRemindersEnabled,
+                onChanged: (value) {
+                  setDialogState(() => _deliveryRemindersEnabled = value);
+                  setState(() => _deliveryRemindersEnabled = value);
+                  _saveNotificationSetting('notify_delivery_reminders', value);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
       ),
     );
   }
@@ -373,9 +452,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showPrivacySettings(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => const AlertDialog(
-        title: Text('Privacy & Security'),
-        content: Column(
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Privacy & Security'),
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -402,8 +481,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: null, // This will be handled by Navigator.pop
-            child: Text('Close'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -413,9 +492,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showHelpDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => const AlertDialog(
-        title: Text('Help & Support'),
-        content: Column(
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Help & Support'),
+        content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -438,8 +517,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: null, // This will be handled by Navigator.pop
-            child: Text('Close'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -449,19 +528,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showSignOutDialog(BuildContext context, AuthProvider authProvider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sign Out'),
         content: const Text(
           'Are you sure you want to sign out? Your data will be synced when you sign back in.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               setState(() {
                 _isLoading = true;
               });

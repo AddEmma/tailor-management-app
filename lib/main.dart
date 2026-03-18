@@ -27,36 +27,69 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(),
-          lazy: true, // Load only when needed
-        ),
+        ChangeNotifierProvider(create: (_) => AuthProvider(), lazy: true),
       ],
       child: MaterialApp(
         title: 'Tailor Management',
         theme: ThemeData(
-          primarySwatch: Colors.indigo,
           useMaterial3: true,
-          // Optimize theme for performance
-          splashFactory: InkSparkle.splashFactory,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.indigo,
+            brightness: Brightness.light,
+          ),
+          // Primary color overrides for consistent branding
+          primaryColor: Colors.indigo,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.indigo,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            centerTitle: false,
+          ),
+          // Enhanced input decoration
           inputDecorationTheme: InputDecorationTheme(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.grey.shade50,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
+          // Card theme
+          cardTheme: const CardThemeData(
+            elevation: 2,
+            clipBehavior: Clip.antiAlias,
+          ),
+          // Elevated button theme
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          // Floating action button theme
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            backgroundColor: Colors.indigo,
+            foregroundColor: Colors.white,
+          ),
+          // Optimize splash effect
+          splashFactory: InkSparkle.splashFactory,
         ),
         home: const AuthWrapper(),
         debugShowCheckedModeBanner: false,
-        // Optimize scrolling and animation performance
+        // Optimize scrolling
         scrollBehavior: const MaterialScrollBehavior().copyWith(
           scrollbars: false,
         ),
         builder: (context, child) {
-          // Simplified error boundary
           return MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.linear(1.0), // Prevent text scaling issues
-            ),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(1.0)),
             child: child!,
           );
         },
