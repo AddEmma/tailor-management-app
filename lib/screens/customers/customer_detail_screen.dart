@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/models.dart';
 import '../../services/firebase_service.dart';
+import '../../utils/constants.dart';
 import 'add_customer_screen.dart';
 import '../orders/add_order_screen.dart';
 
@@ -322,24 +323,27 @@ class CustomerDetailScreen extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.assignment,
-                                    color: Colors.indigo,
-                                    size: 24,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Order History',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
+                              Flexible(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.assignment,
                                       color: Colors.indigo,
+                                      size: 24,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Order History',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.indigo,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
+                              SizedBox(width: 8),
                               ElevatedButton.icon(
                                 onPressed: () {
                                   Navigator.push(
@@ -350,11 +354,12 @@ class CustomerDetailScreen extends StatelessWidget {
                                     ),
                                   );
                                 },
-                                icon: Icon(Icons.add),
+                                icon: Icon(Icons.add, size: 18),
                                 label: Text('New Order'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.indigo,
                                   foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
                                   ),
@@ -759,7 +764,7 @@ class CustomerDetailScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total: \$${order.price.toStringAsFixed(2)}',
+                'Total: ${AppConstants.currencySymbol} ${order.price.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -777,7 +782,7 @@ class CustomerDetailScreen extends StatelessWidget {
                 child: Text(
                   order.isFullyPaid
                       ? 'Paid'
-                      : 'Bal: \$${order.balanceAmount.toStringAsFixed(2)}',
+                      : 'Bal: ${AppConstants.currencySymbol} ${order.balanceAmount.toStringAsFixed(2)}',
                   style: TextStyle(
                     color: order.isFullyPaid
                         ? Colors.green.shade700

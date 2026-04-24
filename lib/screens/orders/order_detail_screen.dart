@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../models/models.dart';
 import '../../services/firebase_service.dart';
+import '../../utils/constants.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final TailorOrder order;
@@ -123,7 +124,7 @@ class OrderDetailScreenState extends State<OrderDetailScreen> {
                       children: [
                         Text('Total Price:', style: TextStyle(fontSize: 16)),
                         Text(
-                          '\${widget.order.price.toStringAsFixed(2)}',
+                          '${AppConstants.currencySymbol} ${widget.order.price.toStringAsFixed(2)}',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -135,7 +136,7 @@ class OrderDetailScreenState extends State<OrderDetailScreen> {
                       children: [
                         Text('Amount Paid:', style: TextStyle(fontSize: 16)),
                         Text(
-                          '\${widget.order.paidAmount.toStringAsFixed(2)}',
+                          '${AppConstants.currencySymbol} ${widget.order.paidAmount.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 16, 
                             fontWeight: FontWeight.bold,
@@ -157,7 +158,7 @@ class OrderDetailScreenState extends State<OrderDetailScreen> {
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          '\${widget.order.balanceAmount.toStringAsFixed(2)}',
+                          '${AppConstants.currencySymbol} ${widget.order.balanceAmount.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -276,7 +277,7 @@ class OrderDetailScreenState extends State<OrderDetailScreen> {
                                 child: Icon(Icons.payment, color: Colors.green),
                               ),
                               title: Text(
-                                '\${payment.amount.toStringAsFixed(2)}',
+                                '${AppConstants.currencySymbol} ${payment.amount.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -356,10 +357,9 @@ class OrderDetailScreenState extends State<OrderDetailScreen> {
                 controller: _paymentAmountController,
                 decoration: InputDecoration(
                   labelText: 'Payment Amount',
-                  prefixIcon: Icon(Icons.attach_money),
-                  prefixText: '\$'
-                ,
-                  hintText: 'Max: \${widget.order.balanceAmount.toStringAsFixed(2)}',
+                  prefixIcon: Icon(Icons.payments_outlined),
+                  prefixText: '${AppConstants.currencySymbol} ',
+                  hintText: 'Max: ${AppConstants.currencySymbol} ${widget.order.balanceAmount.toStringAsFixed(2)}',
                 ),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                 autofocus: true,

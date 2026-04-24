@@ -27,22 +27,28 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
 
   bool _isLoading = false;
 
-  final List<String> _measurementFields = [
-    'Chest/Bust',
-    'Waist',
-    'Hip',
-    'Shoulder Width',
-    'Arm Length',
+  final List<String> _topMeasurementFields = [
+    'Across Back',
+    'Top Length (Long)',
+    'Top Length (Short)',
+    'Chest',
+    'Sleeve Length (Long)',
+    'Sleeve Length (Short)',
+    'Around Arm',
+    'Vest Length',
     'Neck',
-    'Inseam',
-    'Thigh',
-    'Calf',
-    'Wrist',
-    'Bicep',
-    'Length',
-    'Sleeve Length',
-    'Back Width',
   ];
+
+  final List<String> _downMeasurementFields = [
+    'Waist',
+    'Trouser Length',
+    'Shorts Length',
+    'Hip',
+    'Tie',
+    'Bass',
+  ];
+
+  List<String> get _measurementFields => [..._topMeasurementFields, ..._downMeasurementFields];
 
   @override
   void initState() {
@@ -325,65 +331,91 @@ class AddCustomerScreenState extends State<AddCustomerScreen> {
                               ? 3
                               : 2;
 
-                          return GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  childAspectRatio:
-                                      2.5, // Adjusted for better fit
-                                  crossAxisSpacing: 12, // Reduced spacing
-                                  mainAxisSpacing: 12, // Reduced spacing
-                                ),
-                            itemCount: _measurementFields.length,
-                            itemBuilder: (context, index) {
-                              final field = _measurementFields[index];
-                              return TextFormField(
-                                controller: _measurementControllers[field],
-                                decoration: InputDecoration(
-                                  labelText: field,
-                                  suffixText: '"',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      color: Colors.indigo,
-                                      width: 2,
+                          Widget buildGrid(String title, List<String> fields) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                  child: Text(
+                                    title,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.indigo.shade700,
+                                      fontSize: 16,
                                     ),
                                   ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 8, // Reduced padding
-                                    vertical: 8,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
-                                  labelStyle: const TextStyle(
-                                    fontSize: 11,
-                                  ), // Smaller font
                                 ),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                validator: (value) {
-                                  if (value != null && value.isNotEmpty) {
-                                    final double? measurement = double.tryParse(
-                                      value,
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: crossAxisCount,
+                                        childAspectRatio: 2.5,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                      ),
+                                  itemCount: fields.length,
+                                  itemBuilder: (context, index) {
+                                    final field = fields[index];
+                                    return TextFormField(
+                                      controller: _measurementControllers[field],
+                                      decoration: InputDecoration(
+                                        labelText: field,
+                                        suffixText: '"',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: const BorderSide(
+                                            color: Colors.indigo,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 8,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.grey[50],
+                                        labelStyle: const TextStyle(
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
+                                      validator: (value) {
+                                        if (value != null && value.isNotEmpty) {
+                                          final double? measurement = double.tryParse(
+                                            value,
+                                          );
+                                          if (measurement == null) {
+                                            return 'Invalid';
+                                          }
+                                          if (measurement <= 0 || measurement > 100) {
+                                            return 'Invalid range';
+                                          }
+                                        }
+                                        return null;
+                                      },
                                     );
-                                    if (measurement == null) {
-                                      return 'Invalid';
-                                    }
-                                    if (measurement <= 0 || measurement > 100) {
-                                      return 'Invalid range';
-                                    }
-                                  }
-                                  return null;
-                                },
-                              );
-                            },
+                                  },
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildGrid('Top Measurements', _topMeasurementFields),
+                              const SizedBox(height: 16),
+                              buildGrid('Down Measurements', _downMeasurementFields),
+                            ],
                           );
                         },
                       ),

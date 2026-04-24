@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../models/models.dart';
+import '../../utils/constants.dart';
 
 class AddOrderScreen extends StatefulWidget {
   final TailorOrder? order;
@@ -226,8 +227,8 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                               controller: _priceController,
                               decoration: InputDecoration(
                                 labelText: 'Total Price *',
-                                prefixIcon: Icon(Icons.attach_money),
-                                prefixText: '\$',
+                                prefixIcon: Icon(Icons.payments_outlined),
+                                prefixText: '${AppConstants.currencySymbol} ',
                               ),
                               keyboardType: TextInputType.numberWithOptions(decimal: true),
                               validator: (value) {
@@ -248,8 +249,8 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                               controller: _paidAmountController,
                               decoration: InputDecoration(
                                 labelText: 'Amount Paid',
-                                prefixIcon: Icon(Icons.payment),
-                                prefixText: '\$',
+                                prefixIcon: Icon(Icons.wallet_outlined),
+                                prefixText: '${AppConstants.currencySymbol} ',
                               ),
                               keyboardType: TextInputType.numberWithOptions(decimal: true),
                               validator: (value) {

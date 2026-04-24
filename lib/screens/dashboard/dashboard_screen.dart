@@ -6,6 +6,9 @@ import '../../providers/auth_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../models/models.dart';
 import '../../utils/responsive_utils.dart';
+import '../../utils/constants.dart';
+import '../orders/order_detail_screen.dart';
+import '../../utils/export_utils.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -178,6 +181,36 @@ class DashboardScreenState extends State<DashboardScreen>
             onPressed: _loadDashboardData,
             tooltip: 'Refresh',
           ),
+        IconButton(
+          icon: const Icon(Icons.file_download_outlined),
+          onPressed: () async {
+            if (_customers.isNotEmpty || _orders.isNotEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Generating Excel file...')),
+              );
+              try {
+                await ExportUtils.exportAllData(
+                  customers: _customers,
+                  orders: _orders,
+                );
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Export failed: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No data to export')),
+              );
+            }
+          },
+          tooltip: 'Export All Data',
+        ),
       ],
     );
   }
@@ -328,8 +361,8 @@ class DashboardScreenState extends State<DashboardScreen>
       ),
       _StatCard(
         title: 'Monthly Revenue',
-        value: '\$${_monthlyRevenue.toStringAsFixed(2)}',
-        icon: Icons.attach_money,
+        value: '${AppConstants.currencySymbol} ${_monthlyRevenue.toStringAsFixed(2)}',
+        icon: Icons.payments,
         color: Colors.green,
       ),
     ];
@@ -363,8 +396,8 @@ class DashboardScreenState extends State<DashboardScreen>
         const SizedBox(height: 16),
         _StatCard(
           title: 'Monthly Revenue',
-          value: '\$${_monthlyRevenue.toStringAsFixed(2)}',
-          icon: Icons.attach_money,
+          value: '${AppConstants.currencySymbol} ${_monthlyRevenue.toStringAsFixed(2)}',
+          icon: Icons.payments,
           color: Colors.green,
           isFullWidth: true,
         ),
@@ -601,17 +634,17 @@ class _UpcomingOrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '\$${order.price.toStringAsFixed(0)}',
+                '${AppConstants.currencySymbol} ${order.price.toStringAsFixed(0)}',
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
           isThreeLine: true,
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Order details for ${order.customerName}'),
-                duration: const Duration(seconds: 2),
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OrderDetailScreen(order: order),
               ),
             );
           },

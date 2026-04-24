@@ -37,6 +37,9 @@ dependencies:
   # Form validation
   form_field_validator: ^1.1.0
   email_validator: ^3.0.0
+  excel: ^4.0.6
+  share_plus: ^13.1.0
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:

@@ -8,6 +8,7 @@ import '../../services/firebase_service.dart';
 import '../../models/models.dart';
 import 'add_order_screen.dart';
 import 'order_detail_screen.dart';
+import '../../utils/constants.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -137,12 +138,26 @@ class _OrdersScreenState extends State<OrdersScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Orders'),
+        title: Text(
+          'Orders',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+        ),
+        elevation: 4,
+        shadowColor: Colors.black26,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.indigo, Colors.indigo.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
+            tooltip: 'Refresh Orders',
             onPressed: () {
-              // Force reload by cancelling subscription and reloading
               _ordersSubscription?.cancel();
               _ordersSubscription = null;
               _loadOrders();
@@ -150,6 +165,7 @@ class _OrdersScreenState extends State<OrdersScreen>
           ),
           IconButton(
             icon: Icon(Icons.filter_list),
+            tooltip: 'Filter Orders',
             onPressed: () {
               _showFilterDialog();
             },
@@ -158,6 +174,13 @@ class _OrdersScreenState extends State<OrdersScreen>
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withOpacity(0.6),
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          indicatorSize: TabBarIndicatorSize.label,
+          labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
           tabs: _statusTabs.map((status) {
             final count = _getOrderCountForStatus(status);
             return Tab(
@@ -166,17 +189,22 @@ class _OrdersScreenState extends State<OrdersScreen>
                 children: [
                   Text(_getStatusDisplayName(status)),
                   if (count > 0) ...[
-                    SizedBox(width: 4),
+                    SizedBox(width: 8),
                     Container(
-                      padding: EdgeInsets.all(4),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white.withOpacity(0.3)),
                       ),
-                      constraints: BoxConstraints(minWidth: 16),
+                      constraints: BoxConstraints(minWidth: 20),
                       child: Text(
                         count.toString(),
-                        style: TextStyle(fontSize: 12),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -419,19 +447,19 @@ class _OrdersScreenState extends State<OrdersScreen>
                 ],
               ),
               SizedBox(height: 4),
-              Row(
+              Wrap(
+                spacing: 16,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Icon(Icons.attach_money, size: 14, color: Colors.grey[600]),
-                  SizedBox(width: 4),
                   Text(
-                    '\$${order.price.toStringAsFixed(2)}',
+                    '${AppConstants.currencySymbol} ${order.price.toStringAsFixed(2)}',
                     style: TextStyle(
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                       color: Colors.grey[600],
                       fontSize: 12,
                     ),
                   ),
-                  SizedBox(width: 16),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
@@ -443,7 +471,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                     child: Text(
                       order.isFullyPaid
                           ? 'Paid'
-                          : 'Balance: \$${order.balanceAmount.toStringAsFixed(2)}',
+                          : 'Balance: ${AppConstants.currencySymbol} ${order.balanceAmount.toStringAsFixed(2)}',
                       style: TextStyle(
                         color: order.isFullyPaid ? Colors.green : Colors.orange,
                         fontWeight: FontWeight.bold,
