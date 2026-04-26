@@ -6,267 +6,181 @@ import '../../utils/constants.dart';
 import 'add_customer_screen.dart';
 import '../orders/add_order_screen.dart';
 
-class CustomerDetailScreen extends StatelessWidget {
+class CustomerDetailScreen extends StatefulWidget {
   final Customer customer;
 
   const CustomerDetailScreen({super.key, required this.customer});
 
   @override
+  State<CustomerDetailScreen> createState() => _CustomerDetailScreenState();
+}
+
+class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
+  final List<String> _topMeasurementFields = [
+    'Across Back',
+    'Top Length (Long)',
+    'Top Length (Short)',
+    'Chest',
+    'Sleeve Length (Long)',
+    'Sleeve Length (Short)',
+    'Around Arm',
+    'Vest Length',
+    'Neck',
+  ];
+
+  final List<String> _downMeasurementFields = [
+    'Waist',
+    'Trouser Length',
+    'Shorts Length',
+    'Hip',
+    'Tie',
+    'Bass',
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          // Custom App Bar with Hero Image
-          SliverAppBar(
-            expandedHeight: 200,
-            floating: false,
-            pinned: true,
-            backgroundColor: Colors.indigo,
-            foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                customer.name,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  shadows: [Shadow(color: Colors.black45, blurRadius: 2)],
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.indigo, Colors.indigo.shade300],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+    return StreamBuilder<List<Customer>>(
+      stream: FirebaseService.getCustomers(widget.customer.tailorId),
+      builder: (context, snapshot) {
+        Customer currentCustomer = widget.customer;
+        if (snapshot.hasData) {
+          try {
+            currentCustomer = snapshot.data!.firstWhere((c) => c.id == widget.customer.id);
+          } catch (e) {
+            // Customer might have been deleted
+          }
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          body: CustomScrollView(
+            slivers: [
+              // Custom App Bar with Hero Image
+              SliverAppBar(
+                expandedHeight: 200,
+                floating: false,
+                pinned: true,
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    currentCustomer.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      shadows: [Shadow(color: Colors.black45, blurRadius: 2)],
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: Hero(
-                    tag: 'customer_avatar_${customer.id}',
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      child: CircleAvatar(
-                        radius: 45,
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          customer.name.isNotEmpty
-                              ? customer.name[0].toUpperCase()
-                              : '?',
-                          style: TextStyle(
-                            color: Colors.indigo,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.indigo, Colors.indigo.shade300],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                    child: Center(
+                      child: Hero(
+                        tag: 'customer_avatar_${currentCustomer.id}',
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.white.withOpacity(0.2),
+                          child: CircleAvatar(
+                            radius: 45,
+                            backgroundColor: Colors.white,
+                            child: Text(
+                              currentCustomer.name.isNotEmpty
+                                  ? currentCustomer.name[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                color: Colors.indigo,
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.edit),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          AddCustomerScreen(customer: customer),
-                    ),
-                  );
-                },
-              ),
-              PopupMenuButton<String>(
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: ListTile(
-                      leading: Icon(Icons.edit, color: Colors.blue),
-                      title: Text('Edit Customer'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              AddCustomerScreen(customer: currentCustomer),
+                        ),
+                      );
+                    },
                   ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: ListTile(
-                      leading: Icon(Icons.delete, color: Colors.red),
-                      title: Text(
-                        'Delete Customer',
-                        style: TextStyle(color: Colors.red),
+                  PopupMenuButton<String>(
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: ListTile(
+                          leading: Icon(Icons.edit, color: Colors.blue),
+                          title: Text('Edit Customer'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
                       ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete, color: Colors.red),
+                          title: Text(
+                            'Delete Customer',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                AddCustomerScreen(customer: currentCustomer),
+                          ),
+                        );
+                      } else if (value == 'delete') {
+                        _showDeleteDialog(context, currentCustomer);
+                      }
+                    },
                   ),
                 ],
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            AddCustomerScreen(customer: customer),
-                      ),
-                    );
-                  } else if (value == 'delete') {
-                    _showDeleteDialog(context);
-                  }
-                },
               ),
-            ],
-          ),
-
-          // Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Customer Info Card
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person,
-                                color: Colors.indigo,
-                                size: 24,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Contact Information',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.indigo,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Divider(color: Colors.indigo.shade100),
-                          SizedBox(height: 16),
-
-                          _buildInfoItem(
-                            Icons.phone,
-                            'Phone Number',
-                            customer.phone,
-                            onTap: () {
-                              // Could add phone calling functionality
-                            },
-                          ),
-
-                          if (customer.email != null &&
-                              customer.email!.isNotEmpty) ...[
-                            SizedBox(height: 16),
-                            _buildInfoItem(
-                              Icons.email,
-                              'Email Address',
-                              customer.email!,
-                              onTap: () {
-                                // Could add email functionality
-                              },
-                            ),
-                          ],
-
-                          SizedBox(height: 16),
-                          _buildInfoItem(
-                            Icons.calendar_today,
-                            'Customer Since',
-                            DateFormat(
-                              'MMMM dd, yyyy',
-                            ).format(customer.createdAt),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Quick Stats Card
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatItem(
-                              Icons.straighten,
-                              'Measurements',
-                              '${customer.measurements.length}',
-                              Colors.blue,
-                            ),
-                          ),
-                          Container(
-                            height: 50,
-                            width: 1,
-                            color: Colors.grey[300],
-                          ),
-                          Expanded(
-                            child: StreamBuilder<List<TailorOrder>>(
-                              stream:
-                                  FirebaseService.getOrders(
-                                    customer.tailorId,
-                                  ).map(
-                                    (orders) => orders
-                                        .where(
-                                          (order) =>
-                                              order.customerId == customer.id,
-                                        )
-                                        .toList(),
-                                  ),
-                              builder: (context, snapshot) {
-                                final orderCount = snapshot.data?.length ?? 0;
-                                return _buildStatItem(
-                                  Icons.assignment,
-                                  'Orders',
-                                  '$orderCount',
-                                  Colors.green,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Measurements Card
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    
+              // Content
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      // Customer Info Card
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
                             children: [
                               Row(
                                 children: [
                                   Icon(
-                                    Icons.straighten,
+                                    Icons.person,
                                     color: Colors.indigo,
                                     size: 24,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Body Measurements',
+                                    'Contact Information',
                                     style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -275,128 +189,254 @@ class CustomerDetailScreen extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              if (customer.measurements.isNotEmpty)
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.indigo.shade50,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    'in inches',
-                                    style: TextStyle(
-                                      color: Colors.indigo,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                              Divider(color: Colors.indigo.shade100),
+                              SizedBox(height: 16),
+    
+                              _buildInfoItem(
+                                Icons.phone,
+                                'Phone Number',
+                                currentCustomer.phone,
+                                onTap: () {
+                                  // Could add phone calling functionality
+                                },
+                              ),
+    
+                              if (currentCustomer.email != null &&
+                                  currentCustomer.email!.isNotEmpty) ...[
+                                SizedBox(height: 16),
+                                _buildInfoItem(
+                                  Icons.email,
+                                  'Email Address',
+                                  currentCustomer.email!,
+                                  onTap: () {
+                                    // Could add email functionality
+                                  },
                                 ),
+                              ],
+    
+                              SizedBox(height: 16),
+                              _buildInfoItem(
+                                Icons.calendar_today,
+                                'Customer Since',
+                                DateFormat(
+                                  'MMMM dd, yyyy',
+                                ).format(currentCustomer.createdAt),
+                              ),
                             ],
                           ),
-                          Divider(color: Colors.indigo.shade100),
-                          SizedBox(height: 16),
-
-                          if (customer.measurements.isEmpty)
-                            _buildEmptyMeasurements()
-                          else
-                            _buildMeasurementsGrid(),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Orders Section
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      SizedBox(height: 16),
+    
+                      // Quick Stats Card
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Row(
                             children: [
-                              Flexible(
-                                child: Row(
-                                  children: [
-                                    Icon(
+                              Expanded(
+                                child: _buildStatItem(
+                                  Icons.straighten,
+                                  'Measurements',
+                                  '${currentCustomer.measurements.length}',
+                                  Colors.blue,
+                                ),
+                              ),
+                              Container(
+                                height: 50,
+                                width: 1,
+                                color: Colors.grey[300],
+                              ),
+                              Expanded(
+                                child: StreamBuilder<List<TailorOrder>>(
+                                  stream:
+                                      FirebaseService.getOrders(
+                                        currentCustomer.tailorId,
+                                      ).map(
+                                        (orders) => orders
+                                            .where(
+                                              (order) =>
+                                                  order.customerId == currentCustomer.id,
+                                            )
+                                            .toList(),
+                                      ),
+                                  builder: (context, snapshot) {
+                                    final orderCount = snapshot.data?.length ?? 0;
+                                    return _buildStatItem(
                                       Icons.assignment,
-                                      color: Colors.indigo,
-                                      size: 24,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Order History',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                                      'Orders',
+                                      '$orderCount',
+                                      Colors.green,
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+    
+                      // Measurements Card
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.straighten,
                                         color: Colors.indigo,
+                                        size: 24,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Body Measurements',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.indigo,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (currentCustomer.measurements.isNotEmpty)
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.indigo.shade50,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        'in inches',
+                                        style: TextStyle(
+                                          color: Colors.indigo,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
-                                  ],
-                                ),
+                                ],
                               ),
-                              SizedBox(width: 8),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          AddOrderScreen(customer: customer),
-                                    ),
-                                  );
-                                },
-                                icon: Icon(Icons.add, size: 18),
-                                label: Text('New Order'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.indigo,
-                                  foregroundColor: Colors.white,
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
-                              ),
+                              Divider(color: Colors.indigo.shade100),
+                              SizedBox(height: 16),
+    
+                              if (currentCustomer.measurements.isEmpty)
+                                _buildEmptyMeasurements()
+                              else
+                                _buildMeasurementsGrid(currentCustomer),
                             ],
                           ),
-                          Divider(color: Colors.indigo.shade100),
-                          SizedBox(height: 16),
-
-                          _buildOrdersSection(),
-                        ],
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 16),
+    
+                      // Orders Section
+                      Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Flexible(
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.assignment,
+                                          color: Colors.indigo,
+                                          size: 24,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Order History',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.indigo,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AddOrderScreen(customer: currentCustomer),
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.add, size: 18),
+                                    label: Text('New Order'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.indigo,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Divider(color: Colors.indigo.shade100),
+                              SizedBox(height: 16),
+    
+                              _buildOrdersSection(currentCustomer),
+                            ],
+                          ),
+                        ),
+                      ),
+    
+                      SizedBox(height: 100), // Bottom padding for FAB
+                    ],
                   ),
-
-                  SizedBox(height: 100), // Bottom padding for FAB
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddOrderScreen(customer: customer),
-            ),
-          );
-        },
-        icon: Icon(Icons.add_shopping_cart),
-        label: Text('Create Order'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-      ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddOrderScreen(customer: currentCustomer),
+                ),
+              );
+            },
+            icon: Icon(Icons.add_shopping_cart),
+            label: Text('Create Order'),
+            backgroundColor: Colors.indigo,
+            foregroundColor: Colors.white,
+          ),
+        );
+      }
     );
   }
 
@@ -520,85 +560,126 @@ class CustomerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMeasurementsGrid() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Calculate optimal child aspect ratio to prevent overflow
-        final crossAxisCount = 2;
-        final spacing = 12.0;
-        final totalSpacing = (crossAxisCount - 1) * spacing;
-        final itemWidth =
-            (constraints.maxWidth - totalSpacing) / crossAxisCount;
+  Widget _buildMeasurementsGrid(Customer customer) {
+    // Categorize measurements
+    final topMeasurements = customer.measurements.entries
+        .where((e) => _topMeasurementFields.contains(e.key))
+        .toList();
+    final downMeasurements = customer.measurements.entries
+        .where((e) => _downMeasurementFields.contains(e.key))
+        .toList();
+    final otherMeasurements = customer.measurements.entries
+        .where((e) => !_topMeasurementFields.contains(e.key) && !_downMeasurementFields.contains(e.key))
+        .toList();
 
-        // Use a fixed height for each item to prevent overflow
-        const itemHeight = 70.0;
-        final childAspectRatio = itemWidth / itemHeight;
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: childAspectRatio,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-          ),
-          itemCount: customer.measurements.length,
-          itemBuilder: (context, index) {
-            final entry = customer.measurements.entries.elementAt(index);
-            return Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.indigo.shade50, Colors.indigo.shade100],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.indigo.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      entry.key,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.indigo.shade700,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        '${entry.value}"',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.indigo,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (topMeasurements.isNotEmpty) ...[
+          _buildMeasurementSection('Top Measurements', topMeasurements),
+          SizedBox(height: 16),
+        ],
+        if (downMeasurements.isNotEmpty) ...[
+          _buildMeasurementSection('Down Measurements', downMeasurements),
+          SizedBox(height: 16),
+        ],
+        if (otherMeasurements.isNotEmpty) ...[
+          _buildMeasurementSection('Other Measurements', otherMeasurements),
+        ],
+      ],
     );
   }
 
-  Widget _buildOrdersSection() {
+  Widget _buildMeasurementSection(String title, List<MapEntry<String, double>> entries) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo.shade700,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = 2;
+            final spacing = 12.0;
+            final totalSpacing = (crossAxisCount - 1) * spacing;
+            final itemWidth = (constraints.maxWidth - totalSpacing) / crossAxisCount;
+            const itemHeight = 70.0;
+            final childAspectRatio = itemWidth / itemHeight;
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
+              ),
+              itemCount: entries.length,
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.indigo.shade50, Colors.indigo.shade100],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.indigo.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          entry.key,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.indigo.shade700,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Flexible(
+                        child: FittedBox(
+                          child: Text(
+                            '${entry.value}"',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.indigo,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrdersSection(Customer customer) {
     return StreamBuilder<List<TailorOrder>>(
       stream: FirebaseService.getOrders(customer.tailorId).map(
         (orders) =>
@@ -814,7 +895,7 @@ class CustomerDetailScreen extends StatelessWidget {
     }
   }
 
-  void _showDeleteDialog(BuildContext context) {
+  void _showDeleteDialog(BuildContext context, Customer customer) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

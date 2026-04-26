@@ -51,6 +51,7 @@ class TailorOrder {
   final double price;
   final double paidAmount;
   final DateTime deliveryDate;
+  final DateTime materialBroughtDate;
   final DateTime createdAt;
   final OrderStatus status;
   final String tailorId;
@@ -65,6 +66,7 @@ class TailorOrder {
     required this.price,
     required this.paidAmount,
     required this.deliveryDate,
+    required this.materialBroughtDate,
     required this.createdAt,
     required this.status,
     required this.tailorId,
@@ -84,6 +86,7 @@ class TailorOrder {
       'price': price,
       'paidAmount': paidAmount,
       'deliveryDate': deliveryDate.toIso8601String(),
+      'materialBroughtDate': materialBroughtDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'status': status.name,
       'tailorId': tailorId,
@@ -101,6 +104,9 @@ class TailorOrder {
       price: (map['price'] ?? 0).toDouble(),
       paidAmount: (map['paidAmount'] ?? 0).toDouble(),
       deliveryDate: DateTime.parse(map['deliveryDate']),
+      materialBroughtDate: map['materialBroughtDate'] != null 
+          ? DateTime.parse(map['materialBroughtDate']) 
+          : DateTime.parse(map['createdAt']), // Fallback to createdAt if missing
       createdAt: DateTime.parse(map['createdAt']),
       status: OrderStatus.values.firstWhere(
         (e) => e.name == map['status'],

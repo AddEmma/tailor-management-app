@@ -35,10 +35,11 @@ class ExportUtils {
       TextCellValue('Style'),
       TextCellValue('Fabric'),
       TextCellValue('Price'),
-      TextCellValue('Paid Amount'),
+      TextCellValue('Advanced Payment'),
       TextCellValue('Balance'),
       TextCellValue('Status'),
-      TextCellValue('Delivery Date'),
+      TextCellValue('Collection Date'),
+      TextCellValue('Material Date'),
       TextCellValue('Order Date'),
     ]);
 
@@ -54,6 +55,7 @@ class ExportUtils {
         DoubleCellValue(order.balanceAmount),
         TextCellValue(order.status.name),
         TextCellValue(DateFormat('yyyy-MM-dd').format(order.deliveryDate)),
+        TextCellValue(DateFormat('yyyy-MM-dd').format(order.materialBroughtDate)),
         TextCellValue(DateFormat('yyyy-MM-dd').format(order.createdAt)),
       ]);
     }
@@ -149,10 +151,11 @@ class ExportUtils {
         TextCellValue('Style'),
         TextCellValue('Fabric'),
         TextCellValue('Price'),
-        TextCellValue('Paid Amount'),
+        TextCellValue('Advanced Payment'),
         TextCellValue('Balance'),
         TextCellValue('Status'),
-        TextCellValue('Delivery Date'),
+        TextCellValue('Collection Date'),
+        TextCellValue('Material Date'),
         TextCellValue('Order Date'),
       ]);
       for (final order in orders) {
@@ -166,6 +169,7 @@ class ExportUtils {
           DoubleCellValue(order.balanceAmount),
           TextCellValue(order.status.name),
           TextCellValue(DateFormat('yyyy-MM-dd').format(order.deliveryDate)),
+          TextCellValue(DateFormat('yyyy-MM-dd').format(order.materialBroughtDate)),
           TextCellValue(DateFormat('yyyy-MM-dd').format(order.createdAt)),
         ]);
       }

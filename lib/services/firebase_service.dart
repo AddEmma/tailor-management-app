@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
@@ -19,6 +18,9 @@ class FirebaseService {
   _customerControllers = {};
   static final Map<String, StreamController<List<TailorOrder>>>
   _orderControllers = {};
+  static final Map<String, List<Payment>> _mockPayments = {};
+  static final Map<String, StreamController<List<Payment>>>
+  _paymentControllers = {};
 
   // Counters
   static int _customerIdCounter = 1000;
@@ -27,6 +29,7 @@ class FirebaseService {
   // Storage keys
   static const String _customersKey = 'mock_customers';
   static const String _ordersKey = 'mock_orders';
+  static const String _paymentsKey = 'mock_payments';
   static const String _usersKey = 'mock_users';
   static const String _customerCounterKey = 'customer_counter';
   static const String _orderCounterKey = 'order_counter';
@@ -110,6 +113,35 @@ class FirebaseService {
         }
       }
 
+      // Load payments with better error handling
+      final paymentsJson = prefs.getString(_paymentsKey);
+      if (paymentsJson != null && paymentsJson.isNotEmpty) {
+        try {
+          final paymentsData = json.decode(paymentsJson) as Map<String, dynamic>;
+          _mockPayments.clear();
+          paymentsData.forEach((orderId, paymentsList) {
+            if (paymentsList is List) {
+              _mockPayments[orderId] = paymentsList
+                  .map((paymentJson) {
+                    try {
+                      return Payment.fromMap(paymentJson);
+                    } catch (e) {
+                      _log('Error parsing payment: $e', level: 'WARNING');
+                      return null;
+                    }
+                  })
+                  .where((payment) => payment != null)
+                  .cast<Payment>()
+                  .toList();
+            }
+          });
+          _log('Loaded ${_mockPayments.length} order payment lists from storage');
+        } catch (e) {
+          _log('Error parsing payments JSON: $e', level: 'ERROR');
+          _mockPayments.clear();
+        }
+      }
+
       // Load users with better error handling
       final usersJson = prefs.getString(_usersKey);
       if (usersJson != null && usersJson.isNotEmpty) {
@@ -186,6 +218,27 @@ class FirebaseService {
     } catch (e) {
       _log('Error saving orders: $e', level: 'ERROR');
       throw Exception('Failed to save order data');
+    }
+  }
+
+  static Future<void> _savePaymentsToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final paymentsData = <String, dynamic>{};
+
+      _mockPayments.forEach((orderId, payments) {
+        try {
+          paymentsData[orderId] = payments.map((p) => p.toMap()).toList();
+        } catch (e) {
+          _log('Error serializing payments for $orderId: $e', level: 'ERROR');
+        }
+      });
+
+      await prefs.setString(_paymentsKey, json.encode(paymentsData));
+      _log('Saved payments to storage successfully');
+    } catch (e) {
+      _log('Error saving payments: $e', level: 'ERROR');
+      throw Exception('Failed to save payment data');
     }
   }
 
@@ -624,6 +677,7 @@ class FirebaseService {
         price: order.price,
         paidAmount: order.paidAmount,
         deliveryDate: order.deliveryDate,
+        materialBroughtDate: order.materialBroughtDate,
         createdAt: order.createdAt,
         status: order.status,
         tailorId: order.tailorId,
@@ -771,6 +825,7 @@ class FirebaseService {
           price: 450.0,
           paidAmount: 200.0,
           deliveryDate: DateTime.now().add(const Duration(days: 5)),
+          materialBroughtDate: DateTime.now().subtract(const Duration(days: 10)),
           createdAt: DateTime.now().subtract(const Duration(days: 10)),
           status: OrderStatus.inProgress,
           tailorId: tailorId,
@@ -785,6 +840,7 @@ class FirebaseService {
           price: 320.0,
           paidAmount: 320.0,
           deliveryDate: DateTime.now().add(const Duration(days: 3)),
+          materialBroughtDate: DateTime.now().subtract(const Duration(days: 7)),
           createdAt: DateTime.now().subtract(const Duration(days: 7)),
           status: OrderStatus.completed,
           tailorId: tailorId,
@@ -799,6 +855,7 @@ class FirebaseService {
           price: 80.0,
           paidAmount: 0.0,
           deliveryDate: DateTime.now().add(const Duration(days: 12)),
+          materialBroughtDate: DateTime.now().subtract(const Duration(days: 2)),
           createdAt: DateTime.now().subtract(const Duration(days: 2)),
           status: OrderStatus.pending,
           tailorId: tailorId,
@@ -833,6 +890,15 @@ class FirebaseService {
       _log('Adding payment for order ${payment.orderId}');
       await Future.delayed(const Duration(milliseconds: 100));
 
+      // 1. Store the payment record
+      if (!_mockPayments.containsKey(payment.orderId)) {
+        _mockPayments[payment.orderId] = [];
+      }
+      _mockPayments[payment.orderId]!.add(payment);
+      await _savePaymentsToStorage();
+      _notifyPaymentListeners(payment.orderId);
+
+      // 2. Update the order's paid amount
       for (var tailorId in _mockOrders.keys) {
         final orders = _mockOrders[tailorId]!;
         final orderIndex = orders.indexWhere((o) => o.id == payment.orderId);
@@ -847,6 +913,7 @@ class FirebaseService {
             price: order.price,
             paidAmount: order.paidAmount + payment.amount,
             deliveryDate: order.deliveryDate,
+            materialBroughtDate: order.materialBroughtDate,
             createdAt: order.createdAt,
             status: order.status,
             tailorId: order.tailorId,
@@ -855,7 +922,7 @@ class FirebaseService {
           orders[orderIndex] = updatedOrder;
           await _saveOrdersToStorage();
           _notifyOrderListeners(tailorId);
-          _log('Payment added successfully');
+          _log('Payment added and order updated successfully');
           break;
         }
       }
@@ -866,7 +933,39 @@ class FirebaseService {
   }
 
   static Stream<List<Payment>> getPayments(String orderId) {
-    return Stream.value([]);
+    _log('getPayments called for orderId: $orderId');
+
+    if (!_paymentControllers.containsKey(orderId)) {
+      _paymentControllers[orderId] = StreamController<List<Payment>>.broadcast();
+    }
+
+    _initializeAndEmitPayments(orderId);
+
+    return _paymentControllers[orderId]!.stream;
+  }
+
+  static Future<void> _initializeAndEmitPayments(String orderId) async {
+    try {
+      await _initializeStorage();
+      final payments = _mockPayments[orderId] ?? [];
+      payments.sort((a, b) => b.paymentDate.compareTo(a.paymentDate)); // Recent first
+
+      if (_paymentControllers.containsKey(orderId) &&
+          !_paymentControllers[orderId]!.isClosed) {
+        _paymentControllers[orderId]!.add(List.from(payments));
+      }
+    } catch (e) {
+      _log('Error emitting payments: $e', level: 'ERROR');
+    }
+  }
+
+  static void _notifyPaymentListeners(String orderId) {
+    if (_paymentControllers.containsKey(orderId) &&
+        !_paymentControllers[orderId]!.isClosed) {
+      final payments = _mockPayments[orderId] ?? [];
+      payments.sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
+      _paymentControllers[orderId]!.add(List.from(payments));
+    }
   }
 
   static Future<void> initializeNotifications() async {
@@ -946,8 +1045,14 @@ class FirebaseService {
           controller.close();
         }
       }
+      for (var controller in _paymentControllers.values) {
+        if (!controller.isClosed) {
+          controller.close();
+        }
+      }
       _customerControllers.clear();
       _orderControllers.clear();
+      _paymentControllers.clear();
       _isInitialized = false; // Reset initialization flag
       _log('All streams disposed successfully');
     } catch (e) {

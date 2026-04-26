@@ -28,6 +28,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   
   Customer? _selectedCustomer;
   DateTime _selectedDeliveryDate = DateTime.now().add(Duration(days: 7));
+  DateTime _selectedMaterialDate = DateTime.now();
   OrderStatus _selectedStatus = OrderStatus.pending;
   bool _isLoading = false;
   List<Customer> _customers = [];
@@ -45,6 +46,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     
     if (widget.order != null) {
       _selectedDeliveryDate = widget.order!.deliveryDate;
+      _selectedMaterialDate = widget.order!.materialBroughtDate;
       _selectedStatus = widget.order!.status;
     }
     
@@ -57,6 +59,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     
     if (tailorId != null) {
       FirebaseService.getCustomers(tailorId).listen((customers) {
+        if (!mounted) return;
         setState(() {
           _customers = customers;
           if (widget.order != null && _selectedCustomer == null) {
@@ -220,6 +223,63 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                       ),
                       SizedBox(height: 16),
                       
+                      // Timelines
+                      Text(
+                        'Timelines',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: _selectMaterialDate,
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'Material Brought *',
+                                  prefixIcon: Icon(Icons.inventory),
+                                ),
+                                child: Text(
+                                  DateFormat('MMM dd, yyyy').format(_selectedMaterialDate),
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: InkWell(
+                              onTap: _selectDeliveryDate,
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'Collection Date *',
+                                  prefixIcon: Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  DateFormat('MMM dd, yyyy').format(_selectedDeliveryDate),
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+
+                      // Payment Chart
+                      Text(
+                        'Full Chart (Payments)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
@@ -231,6 +291,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                                 prefixText: '${AppConstants.currencySymbol} ',
                               ),
                               keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              onChanged: (_) => setState(() {}),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Price is required';
@@ -248,11 +309,12 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                             child: TextFormField(
                               controller: _paidAmountController,
                               decoration: InputDecoration(
-                                labelText: 'Amount Paid',
+                                labelText: 'Advanced Payment',
                                 prefixIcon: Icon(Icons.wallet_outlined),
                                 prefixText: '${AppConstants.currencySymbol} ',
                               ),
                               keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              onChanged: (_) => setState(() {}),
                               validator: (value) {
                                 if (value != null && value.isNotEmpty) {
                                   final paidAmount = double.tryParse(value);
@@ -270,21 +332,19 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 16),
                       
-                      // Delivery Date
-                      InkWell(
-                        onTap: _selectDeliveryDate,
-                        child: InputDecorator(
-                          decoration: InputDecoration(
-                            labelText: 'Delivery Date *',
-                            prefixIcon: Icon(Icons.calendar_today),
-                          ),
+                      // Balance Summary
+                      if (_priceController.text.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0, left: 4.0),
                           child: Text(
-                            DateFormat('MMM dd, yyyy').format(_selectedDeliveryDate),
+                            'Balance: ${AppConstants.currencySymbol} ${(double.tryParse(_priceController.text) ?? 0) - (double.tryParse(_paidAmountController.text) ?? 0)}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[700],
+                            ),
                           ),
                         ),
-                      ),
                       SizedBox(height: 16),
                       
                       // Status (only for editing)
@@ -352,12 +412,26 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDeliveryDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(Duration(days: 365)),
+      firstDate: DateTime.now().subtract(Duration(days: 365)),
+      lastDate: DateTime.now().add(Duration(days: 365 * 2)),
     );
     if (picked != null && picked != _selectedDeliveryDate) {
       setState(() {
         _selectedDeliveryDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectMaterialDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedMaterialDate,
+      firstDate: DateTime.now().subtract(Duration(days: 365)),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedMaterialDate) {
+      setState(() {
+        _selectedMaterialDate = picked;
       });
     }
   }
@@ -388,6 +462,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         price: double.parse(_priceController.text),
         paidAmount: double.tryParse(_paidAmountController.text) ?? 0,
         deliveryDate: _selectedDeliveryDate,
+        materialBroughtDate: _selectedMaterialDate,
         createdAt: widget.order?.createdAt ?? DateTime.now(),
         status: _selectedStatus,
         tailorId: tailorId,

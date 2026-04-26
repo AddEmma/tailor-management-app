@@ -38,7 +38,8 @@ Many small-to-medium-scale tailors still rely on manual record-keeping (paper bo
 
 ### 3.3 Order Management
 - **Order Creation**: Create orders linked to specific customers.
-- **Details Tracking**: Record style name, fabric type, price, and delivery date.
+- **Details Tracking**: Record style name, fabric type, price, and payment details (Advanced Payment, Balance).
+- **Timeline Tracking**: Record the date material was brought and the expected collection date.
 - **Status Workflow**: Track orders through phases: *Pending → In Progress → Completed → Delivered → Cancelled*.
 - **Urgency Indicators**: Visual cues (Overdue, Urgent, Days Remaining) based on delivery dates.
 

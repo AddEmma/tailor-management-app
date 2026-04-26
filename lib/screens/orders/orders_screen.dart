@@ -584,6 +584,7 @@ class _OrdersScreenState extends State<OrdersScreen>
                       price: order.price,
                       paidAmount: order.paidAmount,
                       deliveryDate: order.deliveryDate,
+                      materialBroughtDate: order.materialBroughtDate,
                       createdAt: order.createdAt,
                       status: value,
                       tailorId: order.tailorId,
