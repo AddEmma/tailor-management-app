@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../models/models.dart';
@@ -33,6 +35,10 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
   bool _isLoading = false;
   List<Customer> _customers = [];
 
+  final ImagePicker _picker = ImagePicker();
+  List<String> _imageUrls = [];
+  List<XFile> _newImages = [];
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +54,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
       _selectedDeliveryDate = widget.order!.deliveryDate;
       _selectedMaterialDate = widget.order!.materialBroughtDate;
       _selectedStatus = widget.order!.status;
+      _imageUrls = List.from(widget.order!.imageUrls);
     }
     
     _loadCustomers();
@@ -386,6 +393,68 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                   ),
                 ),
               ),
+              SizedBox(height: 16),
+
+              // Image Gallery Card
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Design & Fabric Photos',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          IconButton(
+                            onPressed: _pickImages,
+                            icon: Icon(Icons.add_a_photo, color: Colors.indigo),
+                            tooltip: 'Add Photos',
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      if (_imageUrls.isEmpty && _newImages.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Column(
+                              children: [
+                                Icon(Icons.photo_library_outlined,
+                                    size: 48, color: Colors.grey[300]),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Attach fabric or design photos',
+                                  style: TextStyle(color: Colors.grey[500]),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          height: 120,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              ..._imageUrls.asMap().entries.map((entry) =>
+                                  _buildImageItem(entry.key, entry.value,
+                                      isUrl: true)),
+                              ..._newImages.asMap().entries.map((entry) =>
+                                  _buildImageItem(entry.key, entry.value.path,
+                                      isUrl: false)),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(height: 24),
               
               // Save Button
@@ -453,6 +522,13 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         throw Exception('User not authenticated');
       }
 
+      // "Upload" new images
+      List<String> finalImageUrls = List.from(_imageUrls);
+      for (final image in _newImages) {
+        final uploadedUrl = await FirebaseService.uploadOrderImage(image.path);
+        finalImageUrls.add(uploadedUrl);
+      }
+
       final order = TailorOrder(
         id: widget.order?.id ?? Uuid().v4(),
         customerId: _selectedCustomer!.id,
@@ -469,6 +545,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         notes: _notesController.text.trim().isEmpty 
             ? null 
             : _notesController.text.trim(),
+        imageUrls: finalImageUrls,
       );
 
       if (widget.order == null) {
@@ -501,6 +578,78 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> images = await _picker.pickMultiImage();
+      if (images.isNotEmpty) {
+        setState(() {
+          _newImages.addAll(images);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking images: $e');
+    }
+  }
+
+  Widget _buildImageItem(int index, String path, {required bool isUrl}) {
+    return Container(
+      margin: EdgeInsets.only(right: 12),
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: isUrl
+                ? Image.file(
+                    File(path),
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  )
+                : Image.file(
+                    File(path),
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isUrl) {
+                    _imageUrls.removeAt(index);
+                  } else {
+                    _newImages.removeAt(index);
+                  }
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getStatusDisplayName(OrderStatus status) {

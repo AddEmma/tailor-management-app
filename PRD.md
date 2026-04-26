@@ -95,7 +95,7 @@ Many small-to-medium-scale tailors still rely on manual record-keeping (paper bo
 
 
 
-====== FUTURE IMPROVEMENTS====== 
+
 I have completed the requested documentation for your application. You now have a professional foundation for your project's roadmap and overview.
 
 ### 📋 Key Updates:
@@ -103,6 +103,8 @@ I have completed the requested documentation for your application. You now have 
     *   **Core Workflow**: From customer measurement tracking to order fulfillment.
     *   **Financial Tracking**: Automated balance calculations and revenue metrics.
     *   **Technical Architecture**: Overview of the Flutter + Firebase stack.
+
+    ====== FUTURE IMPROVEMENTS====== 
     *   **Future Roadmap**: Features like image galleries and automated notifications.
 2.  **Professional README**: Updated [README.md](file:///d:/tailor-management-app/README.md) to serve as a high-quality landing page for the repository, including feature highlights and setup instructions.
 

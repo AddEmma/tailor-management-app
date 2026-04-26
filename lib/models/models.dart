@@ -56,6 +56,7 @@ class TailorOrder {
   final OrderStatus status;
   final String tailorId;
   final String? notes;
+  final List<String> imageUrls;
 
   TailorOrder({
     required this.id,
@@ -71,6 +72,7 @@ class TailorOrder {
     required this.status,
     required this.tailorId,
     this.notes,
+    this.imageUrls = const [],
   });
 
   double get balanceAmount => price - paidAmount;
@@ -91,6 +93,7 @@ class TailorOrder {
       'status': status.name,
       'tailorId': tailorId,
       'notes': notes,
+      'imageUrls': imageUrls,
     };
   }
 
@@ -114,6 +117,7 @@ class TailorOrder {
       ),
       tailorId: map['tailorId'] ?? '',
       notes: map['notes'],
+      imageUrls: List<String>.from(map['imageUrls'] ?? []),
     );
   }
 }

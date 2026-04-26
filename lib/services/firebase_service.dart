@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 
@@ -682,6 +685,7 @@ class FirebaseService {
         status: order.status,
         tailorId: order.tailorId,
         notes: order.notes,
+        imageUrls: order.imageUrls,
       );
 
       _mockOrders[order.tailorId]!.add(newOrder);
@@ -883,6 +887,44 @@ class FirebaseService {
     }
   }
 
+  static Future<String> uploadOrderImage(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        throw Exception('File does not exist');
+      }
+
+      final directory = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory('${directory.path}/order_images');
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(recursive: true);
+      }
+
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${path.basename(filePath)}';
+      final newPath = '${imagesDir.path}/$fileName';
+
+      await file.copy(newPath);
+      _log('Image "uploaded" to $newPath');
+      return newPath;
+    } catch (e) {
+      _log('Error uploading image: $e', level: 'ERROR');
+      throw Exception('Failed to upload image: $e');
+    }
+  }
+
+  static Future<void> deleteOrderImage(String imagePath) async {
+    try {
+      final file = File(imagePath);
+      if (await file.exists()) {
+        await file.delete();
+        _log('Image deleted: $imagePath');
+      }
+    } catch (e) {
+      _log('Error deleting image: $e', level: 'ERROR');
+    }
+  }
+
   // Payment and other methods remain the same but with improved error handling
   static Future<void> addPayment(Payment payment) async {
     try {
@@ -918,6 +960,7 @@ class FirebaseService {
             status: order.status,
             tailorId: order.tailorId,
             notes: order.notes,
+            imageUrls: order.imageUrls,
           );
           orders[orderIndex] = updatedOrder;
           await _saveOrdersToStorage();
